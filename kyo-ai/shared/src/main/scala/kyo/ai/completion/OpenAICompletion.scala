@@ -144,7 +144,7 @@ private[completion] object OpenAICompletion extends Completion:
                 Abort.fail(AIMissingApiKeyException(config.modelName, config.provider.keyName))
             case Present(key) =>
                 val headers =
-                    Seq("content-type" -> "application/json", "Authorization" -> s"Bearer $key") ++
+                    Seq("content-type" -> "application/json", "Authorization" -> s"Bearer ${key.reveal}") ++
                         config.apiOrg.map("OpenAI-Organization" -> _).toList
                 // stripSuffix rather than raw concat: one endpoint publishes its base URL with a trailing
                 // slash, and the resulting double slash was answered 404, with the reply naming neither URL nor model.
@@ -234,7 +234,7 @@ private[completion] object OpenAICompletion extends Completion:
                 Abort.fail(AIMissingApiKeyException(config.modelName, config.provider.keyName))
             case Present(key) =>
                 val headers =
-                    Seq("content-type" -> "application/json", "Authorization" -> s"Bearer $key") ++
+                    Seq("content-type" -> "application/json", "Authorization" -> s"Bearer ${key.reveal}") ++
                         config.apiOrg.map("OpenAI-Organization" -> _).toList
                 Completion.StreamRequest(
                     s"${config.apiUrl.stripSuffix("/")}/chat/completions",

@@ -571,6 +571,15 @@ val openAiConfig =
         .temperature(0.2)
 ```
 
+The key is held as an `AI.Secret`, not a `String`. `apiKey` takes a `Secret` or a `String` (which it wraps), and a key read from the environment is wrapped where it is read. A `Secret` prints as `Secret(****)`, so a config that reaches a log line, an exception message or a debugger shows the mask, not the key; only the completion backends read the bytes back, when they attach the auth header. Two secrets compare equal when their bytes are. `AI.Secret.fromBytes` builds one from bytes (it copies them), for a caller that never holds the key as a `String`, and `wipe` zeroes the held bytes.
+
+```scala doctest:scope=isolated expect=runs
+val keyed = AI.Config.Anthropic.default.apiKey("sk-ant-example-key")
+assert(keyed.toString.contains("Secret(****)"))
+assert(!keyed.toString.contains("sk-ant-example-key"))
+assert(keyed.apiKey == Present(AI.Secret("sk-ant-example-key")))
+```
+
 Reasoning is on by default, so models reason before answering, at the cost of extra output tokens and latency on every generation. `disableReasoning` turns it off. Whether to reason and how much are stated separately, because they are different questions and the endpoints answer them in different vocabularies.
 
 ```scala

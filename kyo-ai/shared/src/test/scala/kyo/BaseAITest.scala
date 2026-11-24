@@ -281,7 +281,7 @@ abstract class BaseAITest extends kyo.test.Test[Any]:
                         case Absent =>
                             val headers = Seq(
                                 "content-type"      -> "application/json",
-                                "x-api-key"         -> key,
+                                "x-api-key"         -> key.reveal,
                                 "anthropic-version" -> "2023-06-01"
                             )
                             val body =

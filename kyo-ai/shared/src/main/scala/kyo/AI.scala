@@ -35,6 +35,7 @@ object AI:
     export kyo.ai.Context
     export kyo.ai.DeciderConfig
     export kyo.ai.Image
+    export kyo.ai.Secret
 
     /** A composable element of the generation surface that can be enabled on an `AI`: a [[kyo.Tool]], a
       * [[kyo.Prompt]], a [[kyo.Thought]], a [[kyo.Mode]], or an [[kyo.Observe]].

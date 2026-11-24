@@ -25,10 +25,16 @@ import kyo.ai.completion.*
   * environment variables, read via `kyo.System`, never raw `sys.props`/`sys.env`), falling back to
   * Anthropic. The active config is carried in `LLM.State.env.config`, read via `AI.config` and scoped
   * via `AI.withConfig`.
+  *
+  * The key is a [[Secret]]: `apiKey(Secret)` or `apiKey(String)` (which wraps), and the environment
+  * value is wrapped where it is read. A rendered config (`toString`, `productIterator`) prints
+  * `Secret(****)`; the completion backends read the bytes back only when they attach the auth header.
   */
 final case class Config private (
     apiUrl: String,
-    apiKey: Maybe[String],
+    // The provider key, as a `Secret`: a rendered config prints `Secret(****)`, and only the completion
+    // backends read the bytes back, when they attach the auth header.
+    apiKey: Maybe[Secret],
     apiOrg: Maybe[String],
     provider: Config.Provider,
     modelName: String,
@@ -87,7 +93,8 @@ final case class Config private (
     decider: Maybe[DeciderConfig] = Absent
 ):
     def apiUrl(url: String): Config                   = copy(apiUrl = url)
-    def apiKey(key: String): Config                   = copy(apiKey = Present(key))
+    def apiKey(key: Secret): Config                   = copy(apiKey = Present(key))
+    def apiKey(key: String): Config                   = apiKey(Secret(key))
     def apiOrg(org: String): Config                   = copy(apiOrg = Present(org))
     def decider(config: DeciderConfig): Config        = copy(decider = Present(config))
     def decider(config: Maybe[DeciderConfig]): Config = copy(decider = config)
@@ -423,7 +430,8 @@ object Config:
                 for
                     key <- read(config.provider.keyName)
                     org <- read(config.provider.orgKey)
-                yield config.copy(apiKey = config.apiKey.orElse(key), apiOrg = config.apiOrg.orElse(org))
+                // The key is wrapped where it is read, so it never travels as a `String`.
+                yield config.copy(apiKey = config.apiKey.orElse(key.map(Secret(_))), apiOrg = config.apiOrg.orElse(org))
             else config
         // The decider's key rides the same resolution, so a catalog entry stays pure and one call fills
         // every credential the config needs.

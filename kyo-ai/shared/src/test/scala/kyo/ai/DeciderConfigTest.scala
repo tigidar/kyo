@@ -105,9 +105,9 @@ class DeciderConfigTest extends kyo.test.Test[Any]:
             kept   <- System.let(sys)(Config.credentialed(Config.OpenAI.default.apiKey("mine").apiOrg("my-org")))
             filled <- System.let(sys)(Config.credentialed(Config.OpenAI.default))
         yield
-            assert(kept.apiKey == Present("mine"))
+            assert(kept.apiKey == Present(Secret("mine")))
             assert(kept.apiOrg == Present("my-org"))
-            assert(filled.apiKey == Present("from-prop"))
+            assert(filled.apiKey == Present(Secret("from-prop")))
             assert(filled.apiOrg == Present("org-prop"))
         end for
     }
@@ -120,7 +120,7 @@ class DeciderConfigTest extends kyo.test.Test[Any]:
             withoutKey <- System.let(one)(Config.default)
         yield
             assert(withKey.provider.name == "OpenAI")
-            assert(withKey.apiKey == Present("k"))
+            assert(withKey.apiKey == Present(Secret("k")))
             assert(withKey.decider.exists(_.provider eq DeciderConfig.TypeSafe), s"decider: ${withKey.decider}")
             assert(withKey.decider.flatMap(_.apiKey) == Present("t"))
             assert(withoutKey.provider.name == "OpenAI")

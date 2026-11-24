@@ -259,7 +259,7 @@ class ConfigTest extends kyo.test.Test[Any]:
         val customSystem = System(new TestUnsafeSystem(properties = Map("OPENAI_API_KEY" -> "key")))
         System.let(customSystem)(Config.default).map { cfg =>
             assert(cfg.provider.name == "OpenAI")
-            assert(cfg.apiKey == Present("key"), s"default must fill the selected provider's key, got: ${cfg.apiKey}")
+            assert(cfg.apiKey == Present(Secret("key")), s"default must fill the selected provider's key, got: ${cfg.apiKey}")
         }
     }
 
@@ -356,7 +356,7 @@ class ConfigTest extends kyo.test.Test[Any]:
             acceptsImages = true
         )).map { cfg =>
             assert(cfg.modelName == "gpt-4o" && cfg.provider.name == "OpenAI")
-            assert(cfg.apiKey == Present("k"), s"apiKey: ${cfg.apiKey}")
+            assert(cfg.apiKey == Present(Secret("k")), s"apiKey: ${cfg.apiKey}")
             assert(cfg.apiOrg == Present("o"), s"apiOrg: ${cfg.apiOrg}")
         }
     }
@@ -581,6 +581,36 @@ class ConfigTest extends kyo.test.Test[Any]:
             }
         }
         succeed("every graded default is a member of its values")
+    }
+
+    "a rendered config masks the key: toString and productIterator print Secret(****)" in {
+        val key = "sk-ant-not-a-real-key"
+        val cfg = Config.Anthropic.default.apiKey(key)
+        assert(cfg.apiKey == Present(Secret(key)))
+        assert(!cfg.toString.contains(key), s"toString leaks the key: $cfg")
+        assert(cfg.toString.contains("Secret(****)"), s"toString: $cfg")
+        assert(!cfg.productIterator.map(_.toString).exists(_.contains(key)), "productIterator leaks the key")
+        assert(Secret(key).toString == "Secret(****)")
+    }
+
+    "a Secret equals another by its bytes, and its hash does not depend on them" in {
+        assert(Secret("a") == Secret("a"))
+        assert(Secret("a") != Secret("b"))
+        assert(Secret("a") != Secret("ab"))
+        assert(Secret("a").hashCode == Secret("b").hashCode)
+        assert(Config.OpenAI.default.apiKey("k").apiKey == Config.OpenAI.default.apiKey(Secret("k")).apiKey)
+    }
+
+    "Secret.fromBytes copies its input, and wipe zeroes the held bytes" in {
+        val bytes  = "k-1".getBytes(java.nio.charset.StandardCharsets.UTF_8)
+        val secret = Secret.fromBytes(bytes)
+        java.util.Arrays.fill(bytes, 0.toByte)
+        assert(secret == Secret("k-1"), "fromBytes kept a reference to the caller's array")
+        assert(secret.reveal == "k-1")
+        secret.wipe.map { _ =>
+            assert(secret != Secret("k-1"))
+            assert(secret.reveal == "\u0000\u0000\u0000")
+        }
     }
 
 end ConfigTest

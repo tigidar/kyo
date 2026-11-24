@@ -96,7 +96,7 @@ private[completion] object AnthropicCompletion extends Completion:
                 // budget on a real puzzle); with it the single turn spends the full budget before the result.
                 val headers = Seq(
                     "content-type"      -> "application/json",
-                    "x-api-key"         -> key,
+                    "x-api-key"         -> key.reveal,
                     "anthropic-version" -> "2023-06-01"
                 ) ++ (if req.thinking.isDefined then Seq("anthropic-beta" -> "interleaved-thinking-2025-05-14") else Seq.empty)
                 val url = s"${config.apiUrl.stripSuffix("/")}/messages"
@@ -143,7 +143,7 @@ private[completion] object AnthropicCompletion extends Completion:
                 val headers =
                     Seq(
                         "content-type"      -> "application/json",
-                        "x-api-key"         -> key,
+                        "x-api-key"         -> key.reveal,
                         "anthropic-version" -> "2023-06-01"
                     ) ++ (if req.thinking.isDefined then Seq("anthropic-beta" -> "interleaved-thinking-2025-05-14") else Seq.empty)
                 Completion.StreamRequest(
